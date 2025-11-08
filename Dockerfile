@@ -1,11 +1,13 @@
-# Use OpenJDK 17 base image
-FROM openjdk:17-jdk-slim
+# Step 1: Build the React app
+FROM node:18 AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
 
-# Copy jar file from Maven target folder
-COPY target/hospital-management-app.jar app.jar
-
-# Expose port 8080 for app access
-EXPOSE 8080
-
-# Run the Spring Boot app
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+# Step 2: Serve using Nginx
+FROM nginx:stable-alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
